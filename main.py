@@ -1,5 +1,7 @@
 from sentence_transformers import SentenceTransformer
-
+import numpy as np
+import faiss     
+k = 2
 # 1. Load a pretrained Sentence Transformer model
 model = SentenceTransformer("all-MiniLM-L6-v2")
 
@@ -10,14 +12,21 @@ sentences = [
     "He drove to the stadium.",
 ]
 
+q =["How is the whether today?"] 
+qemb = model.encode(q)
+query = np.array(qemb)
 # 2. Calculate embeddings by calling model.encode()
 embeddings = model.encode(sentences)
-print(embeddings.shape)
-# [3, 384]
 
-# 3. Calculate the embedding similarities
-similarities = model.similarity(embeddings, embeddings)
-print(similarities)
-# tensor([[1.0000, 0.6660, 0.1046],
-#         [0.6660, 1.0000, 0.1411],
-#         [0.1046, 0.1411, 1.0000]])
+emb = np.array(embeddings)
+index = faiss.IndexFlatL2(embeddings.shape[1]) 
+index.add(emb) 
+print(index.ntotal)
+
+dist,ind = index.search(query,k)
+print(dist, ind)
+indices = list(ind[0])
+distance = list(dist[0])
+for i in indices:
+    print(f'{sentences[i]} distance: {distance[i]}')
+
